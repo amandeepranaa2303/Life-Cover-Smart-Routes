@@ -3,65 +3,95 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Life Cover Smart Routes - Driver Safety & Navigation</title>
+  <title>Life Cover Smart Routes - AI Friend & Copilot</title>
   
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    html, body, #map { height: 100%; width: 100vw; overflow: hidden; background: #0f172a; }
+    html, body { height: 100%; width: 100vw; overflow: hidden; background: #0f172a; }
     
-    /* Toggle Button for Mobile Screen */
-    .menu-toggle-btn {
+    #map-wrapper { height: 100%; width: 100%; perspective: 1000px; overflow: hidden; }
+    #map { height: 100%; width: 100%; transition: transform 0.5s ease; }
+    #map.mode-3d { transform: rotateX(40deg) scale(1.2) translateY(-5%); transform-origin: 50% 80%; }
+
+    /* Top HUD Bar */
+    .top-hud {
       position: absolute;
       top: 12px;
+      left: 12px;
       right: 12px;
       z-index: 1001;
-      background: #0284c7;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .hud-left, .hud-right { display: flex; gap: 6px; pointer-events: auto; }
+
+    .hud-btn {
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
       color: white;
-      border: none;
-      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 8px 12px;
       border-radius: 20px;
       font-weight: bold;
-      font-size: 13px;
+      font-size: 12px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.4);
       cursor: pointer;
     }
+    .hud-btn.active { background: #10b981; }
+    .hud-btn.ai-friend { background: #8b5cf6; border-color: #c4b5fd; }
 
-    /* Collapsible Glass Control Panel */
+    /* Control & AI Panel */
     .control-panel {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
       z-index: 1000;
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(16px);
       padding: 16px;
-      border-radius: 20px 20px 0 0;
-      box-shadow: 0 -5px 25px rgba(0,0,0,0.6);
-      max-height: 80vh;
+      border-radius: 24px 24px 0 0;
+      box-shadow: 0 -8px 30px rgba(0,0,0,0.7);
+      max-height: 82vh;
       overflow-y: auto;
       color: #f8fafc;
       border-top: 1px solid rgba(255,255,255,0.15);
       transition: transform 0.3s ease-in-out;
     }
+    .control-panel.hidden { transform: translateY(100%); }
 
-    .control-panel.hidden {
-      transform: translateY(100%);
-    }
-
-    .app-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; }
-    .app-brand h2 { font-size: 16px; font-weight: 800; color: #ffffff; }
+    .app-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; }
+    .app-brand h2 { font-size: 15px; font-weight: 800; color: #ffffff; }
     .app-brand span { color: #38bdf8; }
+
+    /* AI Friend Box */
+    .ai-copilot-box {
+      background: linear-gradient(135deg, #1e1b4b, #0f172a);
+      border: 1px solid #8b5cf6;
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 12px;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+    }
+    .ai-header { display: flex; align-items: center; justify-content: space-between; color: #c4b5fd; font-weight: bold; margin-bottom: 4px; }
+    .ai-text { color: #e2e8f0; font-style: italic; margin-bottom: 8px; }
     
+    .ai-chat-actions { display: flex; gap: 6px; }
+    .btn-mic { flex: 2; background: #8b5cf6; color: white; border: none; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .btn-chat-action { flex: 1; background: #334155; color: white; border: none; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
     .input-group { margin-bottom: 8px; }
     .input-group label { display: block; font-size: 10px; color: #94a3b8; margin-bottom: 2px; font-weight: 700; text-transform: uppercase; }
-    .input-group input { width: 100%; padding: 8px 10px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; font-size: 13px; color: #fff; outline: none; }
+    .input-group input, .input-group select { width: 100%; padding: 8px 10px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; font-size: 12px; color: #fff; outline: none; }
 
     .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
-    
     .btn { display: block; width: 100%; padding: 10px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-align: center; font-size: 12px; }
     .btn-gps { background: #f59e0b; color: #0f172a; grid-column: span 2; }
     .btn-main { background: #0284c7; color: white; }
@@ -69,12 +99,11 @@
     .btn-sos { background: #ef4444; color: white; margin-top: 8px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
 
     .toggle-group { margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; }
-    .toggle-group h4 { font-size: 11px; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; }
     .toggle-item { display: flex; align-items: center; justify-content: space-between; margin: 4px 0; font-size: 12px; color: #cbd5e1; }
     
-    .info-card { margin-top: 8px; padding: 8px 10px; background: #1e293b; border-radius: 8px; font-size: 12px; border-left: 4px solid #38bdf8; }
+    .info-card { margin-top: 8px; padding: 8px 10px; background: #1e293b; border-radius: 8px; font-size: 12px; border-left: 4px solid #8b5cf6; }
 
-    /* Emergency SOS Modal Overlay */
+    /* SOS Modal */
     .sos-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(185, 28, 28, 0.96); z-index: 9999; color: white; text-align: center; padding: 40px 20px; }
     .sos-overlay h1 { font-size: 26px; font-weight: 900; }
     .countdown-circle { font-size: 56px; font-weight: 900; margin: 20px auto; width: 110px; height: 110px; line-height: 100px; border: 4px solid white; border-radius: 50%; }
@@ -83,25 +112,64 @@
 </head>
 <body>
 
-  <!-- Map Controls Toggle Button -->
-  <button class="menu-toggle-btn" onclick="togglePanel()">⚙️ Controls / Map View</button>
+  <!-- Top HUD Bar -->
+  <div class="top-hud">
+    <div class="hud-left">
+      <button class="hud-btn" onclick="toggle3DMode()">🕹️ 3D</button>
+      <button class="hud-btn" id="voiceToggleBtn" onclick="toggleVoice()">🔊 Voice</button>
+    </div>
+    <div class="hud-right">
+      <button class="hud-btn ai-friend" onclick="aiFriendTalk()">🤖 AI Dost</button>
+      <button class="hud-btn" onclick="togglePanel()">⚙️ Menu</button>
+    </div>
+  </div>
 
-  <!-- Emergency SOS Overlay Modal -->
   <div class="sos-overlay" id="sosModal">
     <h1>🚨 ACCIDENT DETECTED!</h1>
-    <p>Crash detect hua hai.</p>
+    <p>Crash detect hua hai. Emergency ko call ho rahi hai.</p>
     <div class="countdown-circle" id="countdownSec">10</div>
     <button class="btn-cancel-sos" onclick="cancelAccidentAlert()">MAIN SURAKSHIT HOON (CANCEL)</button>
   </div>
 
   <div class="control-panel" id="controlPanel">
     <div class="app-brand">
-      <h2>🛡️ LIFE COVER <span>Smart Routes</span></h2>
+      <h2>🛡️ LIFE COVER <span>AI Friend & Navigation</span></h2>
+    </div>
+
+    <!-- AI Friend Companion Box -->
+    <div class="ai-copilot-box">
+      <div class="ai-header">
+        <span>🤖 AI Sathi & Copilot (Solo Drive Mode)</span>
+        <span id="aiStatus">Online</span>
+      </div>
+      <div class="ai-text" id="aiMessage">"Hello! Main aapka safar sathi hoon. Akele drive kar rahe ho toh chinta mat karo, main baatein bhi karunga aur rasta bhi dikhaunga!"</div>
+      <div class="ai-chat-actions">
+        <button class="btn-mic" onclick="startVoiceChat()">🎙️ Bol kar baat karein</button>
+        <button class="btn-chat-action" onclick="aiTellJoke()">😂 Joke Sunao</button>
+        <button class="btn-chat-action" onclick="aiMusicTalk()">🎵 Gane / Mood</button>
+      </div>
     </div>
     
-    <div class="input-group">
+    <div class="grid-2">
+      <div class="input-group" style="margin-bottom:0;">
+        <label>Voice Language:</label>
+        <select id="langSelect" onchange="updateLanguage()">
+          <option value="hi-IN">🇮🇳 Hindi (हिंदी)</option>
+          <option value="en-US">🇬🇧 English</option>
+          <option value="pa-IN">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</option>
+        </select>
+      </div>
+      <div class="input-group" style="margin-bottom:0;">
+        <label>AI Voice Tone:</label>
+        <select id="voiceType">
+          <option value="female">Friendly Girl AI</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="input-group" style="margin-top:8px;">
       <label>Start Location:</label>
-      <input type="text" id="startLocation" value="Delhi">
+      <input type="text" id="startLocation" value="My Live Location">
     </div>
     
     <div class="input-group">
@@ -109,77 +177,185 @@
       <input type="text" id="endLocation" value="Chandigarh">
     </div>
 
-    <button class="btn btn-gps" onclick="detectUserLocation()">📍 Use Live GPS Location</button>
+    <button class="btn btn-gps" onclick="startLiveTracking()">📍 Connect Live GPS Tracking</button>
     
     <div class="btn-grid">
-      <button class="btn btn-main" onclick="calculateRoute(false)">🚀 Safe Route</button>
-      <button class="btn btn-bypass" onclick="calculateRoute(true)">🛡️ Avoid Toll</button>
+      <button class="btn btn-main" onclick="calculateRoute(false)">🚀 AI Safe Route</button>
+      <button class="btn btn-bypass" onclick="calculateRoute(true)">🛡️ Toll Bypass</button>
     </div>
 
     <div class="toggle-group">
-      <h4>Safety Features:</h4>
       <div class="toggle-item">
-        <span>💥 Crash Sensor</span>
+        <span>💥 AI Crash & Safety Guard Active</span>
         <input type="checkbox" id="toggleCrashDetection" checked onchange="toggleSensor()">
-      </div>
-      <div class="toggle-item">
-        <span>🛑 Police Naka / Toll</span>
-        <input type="checkbox" id="togglePolice" checked onchange="toggleLayers()">
       </div>
     </div>
 
     <button class="btn btn-sos" onclick="triggerAccidentAlert()">🚨 MANUAL SOS (108 AMBULANCE)</button>
 
     <div class="info-card" id="routeInfo">
-      Locations set karke "Safe Route" par click karein.
+      Solo Drive mode active hai. AI dost aapke sath hai!
     </div>
   </div>
 
-  <div id="map"></div>
+  <div id="map-wrapper">
+    <div id="map" class="mode-3d"></div>
+  </div>
 
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
   <script>
-    const map = L.map('map', { zoomControl: false }).setView([28.6139, 77.2090], 7);
+    const map = L.map('map', { zoomControl: false }).setView([28.6139, 77.2090], 15);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    const safetyGroup = L.layerGroup().addTo(map);
     let userCoords = null;
+    let userMarker = null;
+    let watchId = null;
     let crashTimer = null;
     let currentRouteLayer = null;
+    let voiceEnabled = true;
+    let selectedLang = 'hi-IN';
+
+    function toggle3DMode() {
+      document.getElementById('map').classList.toggle('mode-3d');
+    }
 
     function togglePanel() {
       document.getElementById('controlPanel').classList.toggle('hidden');
     }
 
-    function toggleLayers() {
-      if(document.getElementById('togglePolice').checked) map.addLayer(safetyGroup); 
-      else map.removeLayer(safetyGroup);
+    function toggleVoice() {
+      voiceEnabled = !voiceEnabled;
+      const btn = document.getElementById('voiceToggleBtn');
+      btn.innerHTML = voiceEnabled ? "🔊 Voice" : "🔇 Muted";
+      btn.classList.toggle('active', voiceEnabled);
+      if(voiceEnabled) speakAI("Voice on kar di hai.");
     }
 
-    function detectUserLocation() {
-      document.getElementById('routeInfo').innerHTML = "GPS Signal dhund raha hai...";
+    function updateLanguage() {
+      selectedLang = document.getElementById('langSelect').value;
+      if(selectedLang === 'hi-IN') speakAI("Hindi voice active hai. Safar ka anand lijiye.");
+      else if(selectedLang === 'pa-IN') speakAI("ਪੰਜਾਬੀ ਵਾਇਸ ਐਕਟਿਵ ਹੈ ਜੀ।");
+      else speakAI("English voice active. Enjoy your drive.");
+    }
+
+    // AI Voice Speech Engine (Female Tone)
+    function speakAI(text) {
+      if (!voiceEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = selectedLang;
+      utterance.rate = 1.0;
+      utterance.pitch = 1.25; // Sweet female voice pitch tone
+
+      const voices = window.speechSynthesis.getVoices();
+      const targetVoice = voices.find(v => v.lang.includes(selectedLang));
+      if(targetVoice) utterance.voice = targetVoice;
+
+      window.speechSynthesis.updateQueue ? window.speechSynthesis.updateQueue() : null;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function setAiMessage(msg) {
+      document.getElementById('aiMessage').innerText = `"${msg}"`;
+      speakAI(msg);
+    }
+
+    // AI Friend Interactive Features
+    function aiFriendTalk() {
+      const messages = [
+        "Akele drive karna thoda boring ho sakta hai, par main hoon na! Boliye kya baat karein?",
+        "Aapka safar kaisa chal raha hai? Koi song sunna hai ya raste ki baatein karein?",
+        "Dhyan road par rakhna mere dost! Main aapke sath hi hoon."
+      ];
+      const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+      setAiMessage(randomMsg);
+    }
+
+    function aiTellJoke() {
+      const jokesHi = [
+        "Pati: Tum jab gusse me hoti ho kitni pyaari lagti ho! Patni: Ye taarif thi ya vyang? Pati: Kasam se, zero voltage ka bulb bhi itna nahi chamakta jitna tumhara gussa chamakta hai!",
+        "Teacher: Tum class me late kyo aaye? Student: Madam, raste me ek board laga tha jispe likha tha 'Aage School hai, Dheere Chalein'!",
+        "Police: Tumne signal todha, 500 ka fine do! Driver: Sir ji, signal toota nahi hai, bas wahi khada hai!"
+      ];
+      const jokesEn = [
+        "Driver: Why are you driving so fast? Cop: My brakes failed and I wanted to get home before I crashed!",
+        "Passenger: Driver, please slow down! This is my first time in a car! Driver: Relax, it's my first time driving too!"
+      ];
+      
+      let jokeList = selectedLang === 'en-US' ? jokesEn : jokesHi;
+      const joke = jokeList[Math.floor(Math.random() * jokeList.length)];
+      setAiMessage(joke);
+    }
+
+    function aiMusicTalk() {
+      setAiMessage("Chaliye koi badiya sa playlist lagate hain! Driving ke waqt soft music ya punjabi beats sabse best rehti hain.");
+    }
+
+    // Voice Chat Recognition (Mic Input)
+    function startVoiceChat() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Aapka browser voice recognition support nahi karta. Chrome use karein.");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = selectedLang;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      setAiMessage("Sun rahi hoon... Boliye aap kya kehna chahte hain?");
+
+      recognition.onresult = function(event) {
+        const speechText = event.results[0][0].transcript.toLowerCase();
+        handleUserChatQuery(speechText);
+      };
+
+      recognition.onerror = function() {
+        setAiMessage("Aawaz samajh nahi aayi. Dobara koshish karein.");
+      };
+
+      recognition.start();
+    }
+
+    function handleUserChatQuery(query) {
+      if(query.includes('joke') || query.includes('hasao') || query.includes('chutkule')) {
+        aiTellJoke();
+      } else if(query.includes('bore') || query.includes('akela') || query.includes('baat')) {
+        setAiMessage("Main hoon na aapke sath! Boliye din kaisa chal raha hai aapka?");
+      } else if(query.includes('song') || query.includes('gane') || query.includes('music')) {
+        aiMusicTalk();
+      } else {
+        setAiMessage(`Aapne kaha: "${query}". Main bilkul samajh gayi hoon, aur aapki safety aur raste par poori nazar rakh rahi hoon!`);
+      }
+    }
+
+    function startLiveTracking() {
+      setAiMessage("GPS live tracking connect ho gayi hai. Map ab aapke sath chalega.");
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
+        if(watchId) navigator.geolocation.clearWatch(watchId);
+        watchId = navigator.geolocation.watchPosition(
           pos => {
             userCoords = [pos.coords.latitude, pos.coords.longitude];
-            map.setView(userCoords, 13);
-            L.marker(userCoords).addTo(map).bindPopup("Aapki Location").openPopup();
+            if(!userMarker) {
+              userMarker = L.marker(userCoords).addTo(map).bindPopup("🚗 Live Position");
+            } else {
+              userMarker.setLatLng(userCoords);
+            }
+            map.panTo(userCoords, { animate: true, duration: 1 });
             document.getElementById('startLocation').value = "My Live Location";
-            document.getElementById('routeInfo').innerHTML = "📍 GPS Location mil gayi hai!";
           },
-          err => {
-            alert("GPS Location access allow karein.");
-            document.getElementById('routeInfo').innerHTML = "GPS Fail. City Name type karein.";
-          },
-          { enableHighAccuracy: true }
+          err => { alert("GPS Permission required."); },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
         );
       }
     }
+
+    startLiveTracking();
 
     async function fetchCoords(query) {
       if(query.trim() === "My Live Location" && userCoords) {
@@ -188,13 +364,13 @@
       const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
       const data = await res.json();
       if(data && data.length > 0) return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-      throw new Error("Location nahi mili: " + query);
+      throw new Error("Location nahi mili.");
     }
 
     async function calculateRoute(avoidTolls) {
       const infoBox = document.getElementById('routeInfo');
       try {
-        infoBox.innerHTML = "⏳ Rasta khoja ja raha hai...";
+        setAiMessage("Safe route calculate ho raha hai...");
         
         const start = await fetchCoords(document.getElementById('startLocation').value);
         const end = await fetchCoords(document.getElementById('endLocation').value);
@@ -212,19 +388,25 @@
           if(currentRouteLayer) map.removeLayer(currentRouteLayer);
 
           currentRouteLayer = L.polyline(coords, { 
-            color: avoidTolls ? '#10b981' : '#0284c7', weight: 6, opacity: 0.8 
+            color: avoidTolls ? '#10b981' : '#8b5cf6', weight: 7, opacity: 0.9 
           }).addTo(map);
 
-          map.fitBounds(currentRouteLayer.getBounds(), { padding: [30, 30] });
+          map.fitBounds(currentRouteLayer.getBounds(), { padding: [40, 40] });
 
-          infoBox.innerHTML = `<b>${avoidTolls ? '🛡️ Toll-Free Route' : '🚀 Standard Route'}</b><br>Duri: ${(route.distance/1000).toFixed(1)} km | Time: ${Math.round(route.duration/60)} min`;
+          const distKm = (route.distance/1000).toFixed(1);
+          const timeMin = Math.round(route.duration/60);
+
+          infoBox.innerHTML = `<b>${avoidTolls ? '🛡️ Toll-Free Safe Route' : '🚀 AI Companion Route'}</b><br>Duri: ${distKm} km | Samay: ${timeMin} min`;
           
+          setAiMessage(`Rasta mil gaya hai! ${distKm} kilometer ki yatra hai, lagbhag ${timeMin} minute lagenge. Drive safely!`);
+
           if(window.innerWidth < 768) {
-            setTimeout(() => togglePanel(), 1200);
+            setTimeout(() => togglePanel(), 1500);
           }
         }
       } catch(err) {
-        infoBox.innerHTML = "❌ Route error. Sahi city names (e.g. Delhi, Chandigarh) daalein.";
+        infoBox.innerHTML = "❌ Route error. Sahi location name daalein.";
+        setAiMessage("Kripya destination ka sahi naam likhein.");
       }
     }
 
@@ -243,6 +425,7 @@
 
     function triggerAccidentAlert() {
       document.getElementById('sosModal').style.display = 'block';
+      speakAI("Alert! Accident detect hua hai. Emergency ambulance ko call ki ja rahi hai.");
       let c = 10;
       document.getElementById('countdownSec').innerText = c;
       clearInterval(crashTimer);
@@ -259,6 +442,7 @@
     function cancelAccidentAlert() {
       clearInterval(crashTimer);
       document.getElementById('sosModal').style.display = 'none';
+      speakAI("Emergency alert cancel kar diya gaya hai. Aap bilkul surakshit hain.");
     }
   </script>
 </body>
