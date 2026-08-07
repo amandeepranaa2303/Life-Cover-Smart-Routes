@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Life Cover Smart Routes - Driver Safety & Navigation</title>
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    #map { height: 100vh; width: 100%; z-index: 1; }
+    
+    /* Modern Dark Control Panel UI */
+    .control-panel {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(10px);
+      padding: 16px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      max-width: 360px;
+      width: 90%;
+      color: #f8fafc;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .app-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 8px;
+    }
+
+    .app-brand h2 {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+    }
+
+    .app-brand span { color: #38bdf8; }
+    
+    .input-group { margin-bottom: 8px; }
+    .input-group label { display: block; font-size: 11px; color: #94a3b8; margin-bottom: 3px; font-weight: 600; text-transform: uppercase; }
+    .input-group input { 
+      width: 100%; 
+      padding: 8px 10px; 
+      background: #1e293b;
+      border: 1px solid #334155; 
+      border-radius: 8px; 
+      font-size: 13px; 
+      color: #fff;
+      outline: none;
+    }
+    .input-group input:focus { border-color: #38bdf8; }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+    .btn-gps { background: #f59e0b; color: #0f172a; }
+    .btn-main { background: #0284c7; color: white; }
+    .btn-bypass { background: #10b981; color: white; }
+    .btn-sos { 
+      background: #ef4444; 
+      color: white; 
+      font-size: 13px; 
+      margin-top: 10px; 
+      animation: pulse 1.5s infinite; 
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+    
+    .toggle-group { margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
+    .toggle-group h4 { font-size: 12px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; }
+    .toggle-item { display: flex; align-items: center; justify-content: space-between; margin: 5px 0; font-size: 13px; color: #cbd5e1; }
+    
+    .info-card {
+      margin-top: 10px;
+      padding: 10px;
+      background: #1e293b;
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      border-left: 4px solid #38bdf8;
+      color: #e2e8f0;
+    }
+
+    /* Emergency SOS Overlay Modal */
+    .sos-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(185, 28, 28, 0.96);
+      z-index: 9999;
+      color: white;
+      text-align: center;
+      padding: 50px 20px;
+      box-sizing: border-box;
+      backdrop-filter: blur(5px);
+    }
+
+    .sos-overlay h1 { font-size: 30px; margin-bottom: 10px; font-weight: 900; letter-spacing: 1px; }
+    .sos-overlay p { font-size: 16px; margin-bottom: 15px; color: #fecaca; }
+    .countdown-circle {
+      font-size: 64px;
+      font-weight: 900;
+      margin: 25px auto;
+      width: 130px; height: 130px;
+      line-height: 122px;
+      border: 5px solid white;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.2);
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    }
+    .btn-cancel-sos {
+      background: white; color: #dc2626;
+      padding: 14px 28px; font-size: 16px;
+      border-radius: 30px; border: none;
+      font-weight: 800; cursor: pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Emergency SOS Overlay Modal -->
+  <div class="sos-overlay" id="sosModal">
+    <h1>🚨 ACCIDENT DETECTED!</h1>
+    <p>Gadi me bada crash / impact detect hua hai.</p>
+    <div class="countdown-circle" id="countdownSec">10</div>
+    <p>Agar aap surakshit hain to niche daba kar cancel karein.<br>Nahi to Ambulance (108) ko live location bhej di jayegi.</p>
+    <button class="btn-cancel-sos" onclick="cancelAccidentAlert()">MAIN SURAKSHIT HOON (CANCEL)</button>
+  </div>
+
+  <div class="control-panel">
+    <div class="app-brand">
+      <span>🛡️</span>
+      <h2>LIFE COVER <span>Smart Routes</span></h2>
+    </div>
+    
+    <div class="input-group">
+      <label>Start Location:</label>
+      <input type="text" id="startLocation" value="Delhi" placeholder="Jaise: Delhi, Mumbai">
+    </div>
+    
+    <div class="input-group">
+      <label>Destination:</label>
+      <input type="text" id="endLocation" value="Agra" placeholder="Jaise: Agra, Pune">
+    </div>
+
+    <button class="btn btn-gps" onclick="detectUserLocation()">📍 Use Live GPS Location</button>
+    <button class="btn btn-main" onclick="calculateRoute(false)">🚀 Find Safe Route</button>
+    <button class="btn btn-bypass" onclick="calculateRoute(true)">🛡️ Avoid Toll & Bad Roads</button>
+
+    <div class="toggle-group">
+      <h4>Safety Features & Layers:</h4>
+      <div class="toggle-item">
+        <span>💥 Crash Sensor Active</span>
+        <input type="checkbox" id="toggleCrashDetection" checked onchange="toggleSensor()">
+      </div>
+      <div class="toggle-item">
+        <span>🛑 Police Naka / Traffic</span>
+        <input type="checkbox" id="togglePolice" checked onchange="toggleLayers()">
+      </div>
+      <div class="toggle-item">
+        <span>⚠️ Kharaab Rasta / Potholes</span>
+        <input type="checkbox" id="toggleBadRoad" checked onchange="toggleLayers()">
+      </div>
+      <div class="toggle-item">
+        <span>💰 Toll Plaza Alert</span>
+        <input type="checkbox" id="toggleToll" checked onchange="toggleLayers()">
+      </div>
+    </div>
+
+    <button class="btn btn-sos" onclick="triggerAccidentAlert()">🚨 MANUAL SOS (CALL AMBULANCE)</button>
+
+    <div class="info-card" id="routeInfo">
+      Auto Crash Sensor active hai. Route set karein ya GPS location enable karein.
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <script>
+    // 1. Map Initialization (Center on India)
+    const map = L.map('map').setView([20.5937, 78.9629], 5);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Layer Groups
+    const policeGroup = L.layerGroup().addTo(map);
+    const badRoadGroup = L.layerGroup().addTo(map);
+    const tollGroup = L.layerGroup().addTo(map);
+
+    let userCoords = null;
+    let crashTimer = null;
+    let countdownValue = 10;
+    let isCrashDetectionActive = true;
+
+    // Load Demo Markers
+    function loadSafetyData() {
+      L.circleMarker([28.6139, 77.2090], { color: '#ef4444', radius: 8, fillColor: '#ef4444', fillOpacity: 0.8 }).bindPopup("Police Checking Point").addTo(policeGroup);
+      L.circleMarker([27.8974, 78.0880], { color: '#f59e0b', radius: 8, fillColor: '#f59e0b', fillOpacity: 0.8 }).bindPopup("Kharaab Rasta / Construction").addTo(badRoadGroup);
+      L.circleMarker([27.5000, 77.7000], { color: '#8b5cf6', radius: 9, fillColor: '#8b5cf6', fillOpacity: 0.8 }).bindPopup("Toll Plaza").addTo(tollGroup);
+    }
+    loadSafetyData();
+
+    function toggleLayers() {
+      if(document.getElementById('togglePolice').checked) map.addLayer(policeGroup); else map.removeLayer(policeGroup);
+      if(document.getElementById('toggleBadRoad').checked) map.addLayer(badRoadGroup); else map.removeLayer(badRoadGroup);
+      if(document.getElementById('toggleToll').checked) map.addLayer(tollGroup); else map.removeLayer(tollGroup);
+    }
+
+    // 2. ACCIDENT DETECTION SENSOR (Accelerometer)
+    function toggleSensor() {
+      isCrashDetectionActive = document.getElementById('toggleCrashDetection').checked;
+      if(isCrashDetectionActive) {
+        initMotionSensor();
+      }
+    }
+
+    function initMotionSensor() {
+      if (window.DeviceMotionEvent) {
+        window.addEventListener('devicemotion', handleMotion, false);
+      }
+    }
+
+    function handleMotion(event) {
+      if (!isCrashDetectionActive) return;
+
+      const acc = event.accelerationIncludingGravity;
+      if (acc) {
+        const totalAcc = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
+
+        // Dynamic High Impact Threshold (>35 m/s^2 triggers crash modal)
+        if (totalAcc > 35) {
+          triggerAccidentAlert();
+        }
+      }
+    }
+    initMotionSensor();
+
+    // 3. EMERGENCY SOS SYSTEM
+    function triggerAccidentAlert() {
+      if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+
+      document.getElementById('sosModal').style.display = 'block';
+      countdownValue = 10;
+      document.getElementById('countdownSec').innerText = countdownValue;
+
+      clearInterval(crashTimer);
+      crashTimer = setInterval(() => {
+        countdownValue--;
+        document.getElementById('countdownSec').innerText = countdownValue;
+
+        if (countdownValue <= 0) {
+          clearInterval(crashTimer);
+          dispatchEmergencySOS();
+        }
+      }, 1000);
+    }
+
+    function cancelAccidentAlert() {
+      clearInterval(crashTimer);
+      document.getElementById('sosModal').style.display = 'none';
+      alert("Accident alert cancel kar diya gaya hai. Aap surakshit hain.");
+    }
+
+    function dispatchEmergencySOS() {
+      document.getElementById('sosModal').style.display = 'none';
+
+      let lat = userCoords ? userCoords[0] : 28.6139;
+      let lng = userCoords ? userCoords[1] : 77.2090;
+      
+      const mapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+      const emergencyMessage = `ACCIDENT EMERGENCY! Life Cover App Alert: Muje ambulance ki zaroorat hai. Live Location: ${mapsLink}`;
+
+      // 1. Dial Ambulance Helpline (108 India)
+      window.location.href = `tel:108`;
+
+      // 2. Send Emergency SMS
+      setTimeout(() => {
+        window.location.href = `sms:108?body=${encodeURIComponent(emergencyMessage)}`;
+      }, 1500);
+
+      alert("EMERGENCY SENT: Ambulance (108) aur Live GPS Location dispatch kar di gayi hai!");
+    }
+
+    // 4. GPS & OSRM ROUTING ENGINE
+    function detectUserLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+          userCoords = [position.coords.latitude, position.coords.longitude];
+          map.setView(userCoords, 14);
+          L.marker(userCoords).addTo(map).bindPopup("Aapki Live Location").openPopup();
+          document.getElementById('startLocation').value = "My Live Location";
+        });
+      } else {
+        alert("GPS location access support nahi hai.");
+      }
+    }
+
+    async function getCoordinates(placeName) {
+      if(placeName === "My Live Location" && userCoords) return { lon: userCoords[1], lat: userCoords[0] };
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(placeName)}`);
+      const data = await res.json();
+      if(data.length > 0) return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+      throw new Error("Location nahi mili.");
+    }
+
+    let currentRouteLayer = null;
+    async function calculateRoute(avoidTolls) {
+      try {
+        const startText = document.getElementById('startLocation').value;
+        const endText = document.getElementById('endLocation').value;
+
+        document.getElementById('routeInfo').innerHTML = "Rasta calculate ho raha hai...";
+
+        const start = await getCoordinates(startText);
+        const end = await getCoordinates(endText);
+
+        let url = `https://router.project-osrm.org/route/v1/driving/${start.lon},${start.lat};${end.lon},${end.lat}?overview=full&geometries=geojson`;
+        if(avoidTolls) url += `&exclude=toll`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if(data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+          if(currentRouteLayer) map.removeLayer(currentRouteLayer);
+
+          currentRouteLayer = L.polyline(coords, { 
+            color: avoidTolls ? '#10b981' : '#38bdf8', 
+            weight: 6,
+            opacity: 0.9 
+          }).addTo(map);
+
+          map.fitBounds(currentRouteLayer.getBounds());
+
+          document.getElementById('routeInfo').innerHTML = `
+            <b>${avoidTolls ? '🛡️ Toll-Free Bypass Route' : '🚀 Standard Route'}</b><br>
+            📏 Duri: ${(route.distance/1000).toFixed(1)} km | ⏱️ Time: ${Math.round(route.duration/60)} min<br>
+            ${avoidTolls ? '<span style="color:#10b981;">Toll avoid kar diya gaya hai.</span>' : '<span style="color:#f59e0b;">Raste me toll aayega.</span>'}
+          `;
+        }
+      } catch(e) {
+        alert("Kripya sahi location ka naam daalein.");
+        document.getElementById('routeInfo').innerHTML = "Error: Route calculation fail hua.";
+      }
+    }
+  </script>
+</body>
+</html>
