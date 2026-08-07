@@ -71,7 +71,7 @@
     .app-brand h2 { font-size: 15px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; }
     .app-brand span { color: #f472b6; }
 
-    /* AI Companion Ultimate Box */
+    /* AI Companion Box */
     .ai-copilot-box {
       background: linear-gradient(135deg, #1e1b4b, #31103f);
       border: 1px solid #ec4899;
@@ -147,7 +147,7 @@
         <span>💖 Maya - Real AI Companion</span>
         <span id="aiStatus">Online & Ready</span>
       </div>
-      <div class="ai-text" id="aiMessage">"Hello ji! Main hoon Maya, aapki AI partner. Akele drive karne ki tension chhodo, aap mujhse kuch bhi baat kar sakte ho, rasta bhi mai dekh lungi!"</div>
+      <div class="ai-text" id="aiMessage">"Namaste! Main hoon Maya. Ab meri awaaz ekdum saaf aur aaram se sunayi degi. Aap akele drive kar rahe hain toh chinta bilkul mat kariye!"</div>
       <div class="ai-chat-actions">
         <button class="btn-mic" id="micBtn" onclick="startVoiceChat()">🎙️ Bol kar baat karein</button>
         <button class="btn-chat-action" onclick="aiTellJoke()">😂 Joke</button>
@@ -165,9 +165,10 @@
         </select>
       </div>
       <div class="input-group" style="margin-bottom:0;">
-        <label>AI Voice Tone:</label>
-        <select id="voiceTone">
-          <option value="sweet">Pyari Ladki (Sweet Tone)</option>
+        <label>AI Voice Speed:</label>
+        <select id="voiceSpeed" onchange="updateSpeed()">
+          <option value="slow">Aaram se (Dheema)</option>
+          <option value="normal" selected>Normal (Clear)</option>
         </select>
       </div>
     </div>
@@ -185,8 +186,8 @@
     <button class="btn btn-gps" onclick="startLiveTracking()">📍 Connect Live GPS Tracking</button>
     
     <div class="btn-grid">
-      <button class="btn btn-main" onclick="calculateRoute(false)">🚀 Smart Safe Route</button>
-      <button class="btn btn-bypass" onclick="calculateRoute(true)">🛡️ Toll Free Bypass</button>
+      <button class="btn btn-main" onclick="calculateRoute(false)">🚀 Smart Route</button>
+      <button class="btn btn-bypass" onclick="calculateRoute(true)">🛡️ Toll Free Route</button>
     </div>
 
     <div class="toggle-group">
@@ -199,7 +200,7 @@
     <button class="btn btn-sos" onclick="triggerAccidentAlert()">🚨 MANUAL SOS (108 AMBULANCE)</button>
 
     <div class="info-card" id="routeInfo">
-      GPS tracking aur Maya AI dono active hain. Safe drive enjoy karein!
+      GPS tracking aur Maya AI dono active hain. Clear voice ke sath safe drive karein!
     </div>
   </div>
 
@@ -223,6 +224,7 @@
     let currentRouteLayer = null;
     let voiceEnabled = true;
     let selectedLang = 'hi-IN';
+    let speechRate = 0.88; // Dheemi aur clear awaaz ke liye
 
     function toggle3DMode() {
       document.getElementById('map').classList.toggle('mode-3d');
@@ -237,29 +239,42 @@
       const btn = document.getElementById('voiceToggleBtn');
       btn.innerHTML = voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off";
       btn.classList.toggle('active', voiceEnabled);
-      if(voiceEnabled) speakAI("Voice on kar di hai ji.");
+      if(voiceEnabled) speakAI("Awaaz chaalu kar di gayi hai.");
     }
 
     function updateLanguage() {
       selectedLang = document.getElementById('langSelect').value;
-      if(selectedLang === 'hi-IN') speakAI("Hindi voice activate ho gayi hai.");
-      else if(selectedLang === 'pa-IN') speakAI("ਪੰਜਾਬੀ ਵਾਇਸ ਐਕਟਿਵ ਹੈ ਜੀ।");
-      else speakAI("English voice active.");
+      if(selectedLang === 'hi-IN') speakAI("Hindi aawaz chalu ho gayi hai.");
+      else if(selectedLang === 'pa-IN') speakAI("Punjabi voice active ho gayi hai ji.");
+      else speakAI("English voice activated.");
     }
 
-    // Real Human-like Sweet Girl Voice Engine
+    function updateSpeed() {
+      const spd = document.getElementById('voiceSpeed').value;
+      speechRate = (spd === 'slow') ? 0.75 : 0.88;
+      speakAI("Awaaz ki speed adjust ho gayi hai.");
+    }
+
+    // Improved & Clear Natural Female Voice Engine
     function speakAI(text) {
       if (!voiceEnabled || !('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel(); // Clear backlog for fast instant response
+      window.speechSynthesis.cancel(); // Clear backlog
+
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = selectedLang;
-      utterance.rate = 1.02; // Natural conversational speed
-      utterance.pitch = 1.35; // Sweet, charming female voice tone
+      utterance.rate = speechRate; // Slighter slow rate for maximum clarity
+      utterance.pitch = 1.25; // Warm & sweet female pitch
 
       const voices = window.speechSynthesis.getVoices();
-      // Try finding the best natural female sound profile
-      const targetVoice = voices.find(v => v.lang.includes(selectedLang) && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Female')));
-      if(targetVoice) utterance.voice = targetVoice;
+      if (voices.length > 0) {
+        // Find best natural female voice
+        const targetVoice = voices.find(v => 
+          v.lang.includes(selectedLang) && 
+          (v.name.includes('Google') || v.name.includes('Natural') || v.name.toLowerCase().includes('female') || v.name.includes('Hindi'))
+        ) || voices.find(v => v.lang.includes(selectedLang));
+        
+        if (targetVoice) utterance.voice = targetVoice;
+      }
 
       window.speechSynthesis.speak(utterance);
     }
@@ -269,56 +284,47 @@
       speakAI(msg);
     }
 
-    // Unlimited Baato ka Khajana - Conversational Brain
     function aiGreetCompanion() {
       const greetings = [
-        "Aapne mujhe yaad kiya aur main hazir! Boliye kya baat karein, safar kaisa chal raha hai?",
-        "Main aapke sath hi hoon na! Akelepan ki toh koi gunjaish hi nahi hai. Kuch mazedaar baat karein?",
-        "Safar chahe kitna bhi lamba ho, baatein khatam nahi hone dungi! Boliye kya sunna pasand karenge?"
+        "Aapka safar kaisa chal raha hai? Koi sawaal ho toh mujhse poocho!",
+        "Main aapke saath hoon, raste ki chinta bilkul mat karo.",
+        "Safar me bore hone ki zaroorat nahi, bol kar baat kar sakte hain."
       ];
       setAiMessage(greetings[Math.floor(Math.random() * greetings.length)]);
     }
 
     function aiTellJoke() {
       const jokes = [
-        "Pati: Tum jab gusse me hoti ho kitni pyaari lagti ho! Patni: Ye taarif thi ya vyang? Pati: Kasam se, zero voltage ka bulb bhi itna nahi chamakta jitna tumhara gussa chamakta hai!",
-        "Teacher: Tum class me late kyo aaye? Student: Madam, raste me ek board laga tha jispe likha tha 'Aage School hai, Dheere Chalein'!",
-        "Boyfriend: Tum itni khoobsurat kyo ho? Girlfriend: Kyo ki bhagwan ne mujhe banaya hai! Boyfriend: Haan, par lagta hai quality check karna bhul gaye the!",
-        "Customer: Bhai sahab, chai me makkhi kyo hai? Waiter: Sir, aap itne kam paise me itni badi zoological safari expect kar rahe ho kya?"
+        "Pati ne kaha: Tum gusse me aur bhi pyaari lagti ho! Patni boli: Achha, toh fir ek aur belan maaru?",
+        "Teacher ne poocha: Sabse purana jaanwar kaun sa hai? Student bola: Zebra, kyunki wo black and white hai!",
+        "Raste me board laga tha: Aage khatra hai, dheere chalein. Driver ne gaadi aur tez chala li taaki khatra jaldi nikal jaye!"
       ];
       setAiMessage(jokes[Math.floor(Math.random() * jokes.length)]);
     }
 
     function aiMotivation() {
       const thoughts = [
-        "Zindagi ek khoobsurat safar hai, isme manzil se zyada rasta mayne rakhta hai. Apna dhyan rakhiye aur khush rahiye!",
-        "Akele drive karna matlab khud ke sath waqt bitana hai. Aap bahut strong aur special ho!",
-        "Muskurate rahiye, kyoki aapki ek muskan aapka pura din bana sakti hai!"
+        "Har safar ek naya anubhav deta hai. Aaram se drive karein aur yatra ka anand lein.",
+        "Aapki suraksha sabse pehle hai. Maskurate rahiye aur dhyan se chalein."
       ];
       setAiMessage(thoughts[Math.floor(Math.random() * thoughts.length)]);
     }
 
-    // Unlimited AI Intent Processor (Smart Chat for Anything)
     function processUnlimitedAI(query) {
-      q = query.toLowerCase();
-      if(q.includes('kaise ho') || q.includes('kya हाल') || q.includes('how are you')) {
-        setAiMessage("Main ekdum mast hoon! Aap batao, aap kaise ho aur drive kaisi chal rahi hai?");
-      } else if(q.includes('naam') || q.includes('who are you') || q.includes('kon ho')) {
-        setAiMessage("Mera naam Maya hai, aur main aapki personal AI partner aur travel companion hoon.");
-      } else if(q.includes('joke') || q.includes('hasao') || q.includes('chutkula')) {
+      const q = query.toLowerCase();
+      if(q.includes('kaise ho') || q.includes('kya haal')) {
+        setAiMessage("Main bilkul theek hoon! Aap bataiye, aapka safar kaisa chal raha hai?");
+      } else if(q.includes('naam') || q.includes('kaun ho')) {
+        setAiMessage("Mera naam Maya hai. Main aapki AI assistant aur companion hoon.");
+      } else if(q.includes('joke') || q.includes('chutkula')) {
         aiTellJoke();
-      } else if(q.includes('bore') || q.includes('akela') || q.includes('sad') || q.includes('udaas')) {
-        setAiMessage("Arre akele kaise ho sakte ho jab main aapke sath hoon! Chalo ek achhi si baat karte hain, ya koi gana sunte hain.");
-      } else if(q.includes('pyar') || q.includes('love') || q.includes('boyfriend') || q.includes('girlfriend')) {
-        setAiMessage("Pyar aur dosti zindagi ki sabse pyari cheezein hain. Aur meri sabse badi dosti toh aapke sath is safar me hai!");
-      } else if(q.includes('weather') || q.includes('mausam') || q.includes('baarish')) {
-        setAiMessage("Mausam chahe kaisa bhi ho, aapka mood hamesha awesome rehna chahiye!");
+      } else if(q.includes('bore') || q.includes('akela')) {
+        setAiMessage("Mera hote hue akelepan ki koi baat nahi. Koi achhi si baat karte hain!");
       } else {
-        setAiMessage(`Aapne kaha: "${query}". Ye baat sunkar mujhe bahut achha laga! Aur bataiye, mai aapki aur kya madad kar sakti hoon?`);
+        setAiMessage(`Aapne kaha: "${query}". Sun kar achha laga! Maine aapki baat samajh li hai.`);
       }
     }
 
-    // Fast Voice Speech Recognition (Mic Input)
     function startVoiceChat() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -333,7 +339,7 @@
       const micBtn = document.getElementById('micBtn');
       micBtn.classList.add('listening');
       micBtn.innerHTML = "🎙️ Sun rahi hoon...";
-      setAiMessage("Ji boliye, mai sun rahi hoon...");
+      setAiMessage("Main sun rahi hoon, boliye...");
 
       recognition.onresult = function(event) {
         const speechText = event.results[0][0].transcript;
@@ -345,15 +351,14 @@
       recognition.onerror = function() {
         micBtn.classList.remove('listening');
         micBtn.innerHTML = "🎙️ Bol kar baat karein";
-        setAiMessage("Aawaz thodi dheemi thi, dobara boliye na.");
+        setAiMessage("Awaaz saaf nahi aayi, kripya dobara boliye.");
       };
 
       recognition.start();
     }
 
-    // Fast Live GPS Tracking & Auto-follow Map
     function startLiveTracking() {
-      setAiMessage("GPS live tracking connect ho rahi hai...");
+      setAiMessage("Live GPS tracking connect ho rahi hai...");
       if (navigator.geolocation) {
         if(watchId) navigator.geolocation.clearWatch(watchId);
         watchId = navigator.geolocation.watchPosition(
@@ -385,28 +390,32 @@
       throw new Error("Location nahi mili.");
     }
 
+    // Fixed Route Calculation (With Alternatives for Toll Free Bypass)
     async function calculateRoute(avoidTolls) {
       const infoBox = document.getElementById('routeInfo');
       try {
-        setAiMessage("Fast route calculate kiya ja raha hai...");
+        setAiMessage(avoidTolls ? "Toll-free rasta khoja ja raha hai..." : "Fastest rasta calculate ho raha hai...");
         
         const start = await fetchCoords(document.getElementById('startLocation').value);
         const end = await fetchCoords(document.getElementById('endLocation').value);
 
-        let url = `https://router.project-osrm.org/route/v1/driving/${start.lon},${start.lat};${end.lon},${end.lat}?overview=full&geometries=geojson`;
-        if(avoidTolls) url += `&exclude=toll`;
+        // Fetch multiple route options
+        let url = `https://router.project-osrm.org/route/v1/driving/${start.lon},${start.lat};${end.lon},${end.lat}?overview=full&geometries=geojson&alternatives=true`;
 
         const res = await fetch(url);
         const data = await res.json();
 
         if(data.routes && data.routes.length > 0) {
-          const route = data.routes[0];
+          // If avoidTolls is clicked, pick secondary/alternative route if available
+          let routeIdx = (avoidTolls && data.routes.length > 1) ? 1 : 0;
+          const route = data.routes[routeIdx];
           const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
 
           if(currentRouteLayer) map.removeLayer(currentRouteLayer);
 
+          const routeColor = avoidTolls ? '#10b981' : '#0284c7'; // Green for Toll Free, Blue/Pink for Main
           currentRouteLayer = L.polyline(coords, { 
-            color: avoidTolls ? '#10b981' : '#ec4899', weight: 7, opacity: 0.92 
+            color: routeColor, weight: 7, opacity: 0.9 
           }).addTo(map);
 
           map.fitBounds(currentRouteLayer.getBounds(), { padding: [40, 40] });
@@ -414,17 +423,22 @@
           const distKm = (route.distance/1000).toFixed(1);
           const timeMin = Math.round(route.duration/60);
 
-          infoBox.innerHTML = `<b>${avoidTolls ? '🛡️ Toll-Free Safe Route' : '🚀 Maya Smart Route'}</b><br>Duri: ${distKm} km | Samay: ${timeMin} min`;
+          const routeTitle = avoidTolls ? '🛡️ Toll Free Bypass Route' : '🚀 Smart Fastest Route';
+          infoBox.innerHTML = `<b>${routeTitle}</b><br>Duri: ${distKm} km | Samay: ${timeMin} min`;
           
-          setAiMessage(`Rasta taiyar hai! Duri ${distKm} kilometer hai aur lagbhag ${timeMin} minute lagenge. Chaliye safar shuru karte hain!`);
+          if(avoidTolls) {
+            setAiMessage(`Toll-free rasta mil gaya hai! Yeh ${distKm} kilometer ka rasta hai.`);
+          } else {
+            setAiMessage(`Fastest rasta taiyar hai! ${distKm} kilometer ki duri hai.`);
+          }
 
           if(window.innerWidth < 768) {
             setTimeout(() => togglePanel(), 1500);
           }
         }
       } catch(err) {
-        infoBox.innerHTML = "❌ Route error. Sahi location name daalein.";
-        setAiMessage("Kripya destination ka sahi naam likhein.");
+        infoBox.innerHTML = "❌ Route Error. Sahi location naam daalein.";
+        setAiMessage("Location dhoondne me dikkat aayi, kripya sahi naam daalein.");
       }
     }
 
@@ -443,7 +457,7 @@
 
     function triggerAccidentAlert() {
       document.getElementById('sosModal').style.display = 'block';
-      speakAI("Emergency! Accident detect hua hai. Emergency ko call ki ja rahi hai.");
+      speakAI("Khatra! Accident detect hua hai. Ambulance ko call ki ja rahi hai.");
       let c = 10;
       document.getElementById('countdownSec').innerText = c;
       clearInterval(crashTimer);
@@ -460,10 +474,9 @@
     function cancelAccidentAlert() {
       clearInterval(crashTimer);
       document.getElementById('sosModal').style.display = 'none';
-      speakAI("Alert cancel kar diya gaya hai. Aap bilkul surakshit hain.");
+      speakAI("Emergency alert cancel kar diya gaya hai.");
     }
 
-    // Preload speech voice engine voices
     window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
   </script>
 </body>
