@@ -3,17 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Life Cover - Ultimate AI Companion & 3D Nav</title>
+  <title>Life Cover - Google Style Navigation & Safety</title>
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    html, body { height: 100%; width: 100vw; overflow: hidden; background: #0b0f19; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    html, body { height: 100%; width: 100vw; overflow: hidden; background: #e8eaed; }
     
-    #map-wrapper { height: 100%; width: 100%; perspective: 1000px; overflow: hidden; }
-    #map { height: 100%; width: 100%; transition: transform 0.4s ease; }
-    #map.mode-3d { transform: rotateX(42deg) scale(1.25) translateY(-6%); transform-origin: 50% 80%; }
+    #map-wrapper { height: 100%; width: 100%; position: relative; }
+    #map { height: 100%; width: 100%; }
 
     /* Top HUD Bar */
     .top-hud {
@@ -28,91 +27,67 @@
       pointer-events: none;
     }
 
-    .hud-left, .hud-right { display: flex; gap: 6px; pointer-events: auto; }
+    .hud-left, .hud-right { display: flex; gap: 8px; pointer-events: auto; }
 
     .hud-btn {
-      background: rgba(15, 23, 42, 0.95);
-      backdrop-filter: blur(12px);
-      color: white;
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 8px 14px;
-      border-radius: 20px;
-      font-weight: bold;
-      font-size: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      background: #ffffff;
+      color: #3c4043;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 24px;
+      font-weight: 600;
+      font-size: 13px;
+      box-shadow: 0 2px 6px rgba(60,64,67,0.3);
       cursor: pointer;
       transition: all 0.2s;
     }
-    .hud-btn:active { transform: scale(0.95); }
-    .hud-btn.active { background: #10b981; border-color: #34d399; }
-    .hud-btn.ai-friend { background: linear-gradient(135deg, #8b5cf6, #ec4899); border-color: #f472b6; }
+    .hud-btn:active { background: #f1f3f4; }
+    .hud-btn.active { background: #1a73e8; color: #white; }
 
-    /* Control & AI Panel */
+    /* Control Panel (Google Maps Style Sheet) */
     .control-panel {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
       z-index: 1000;
-      background: rgba(11, 15, 25, 0.97);
-      backdrop-filter: blur(20px);
-      padding: 16px;
-      border-radius: 26px 26px 0 0;
-      box-shadow: 0 -10px 35px rgba(0,0,0,0.8);
-      max-height: 85vh;
+      background: #ffffff;
+      padding: 20px 16px;
+      border-radius: 24px 24px 0 0;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+      max-height: 80vh;
       overflow-y: auto;
-      color: #f8fafc;
-      border-top: 1px solid rgba(255,255,255,0.18);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: #202124;
+      transition: transform 0.3s ease;
     }
     .control-panel.hidden { transform: translateY(100%); }
 
-    .app-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; }
-    .app-brand h2 { font-size: 15px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; }
-    .app-brand span { color: #f472b6; }
+    .app-brand { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; border-bottom: 1px solid #e8eaed; padding-bottom: 8px; }
+    .app-brand h2 { font-size: 16px; font-weight: 700; color: #1a73e8; }
 
-    /* AI Companion Box */
-    .ai-copilot-box {
-      background: linear-gradient(135deg, #1e1b4b, #31103f);
-      border: 1px solid #ec4899;
-      border-radius: 14px;
-      padding: 12px;
-      margin-bottom: 10px;
-      font-size: 12px;
-      box-shadow: 0 4px 20px rgba(236, 72, 153, 0.25);
-    }
-    .ai-header { display: flex; align-items: center; justify-content: space-between; color: #f472b6; font-weight: bold; margin-bottom: 6px; font-size: 13px; }
-    .ai-text { color: #f1f5f9; font-style: italic; margin-bottom: 10px; line-height: 1.4; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+    .input-group { margin-bottom: 10px; }
+    .input-group label { display: block; font-size: 11px; color: #5f6368; margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
+    .input-group input { width: 100%; padding: 12px; background: #f1f3f4; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; color: #202124; outline: none; }
+    .input-group input:focus { border-color: #1a73e8; background: #fff; }
+
+    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+    .btn { display: block; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; text-align: center; font-size: 13px; }
+    .btn-gps { background: #fbbc04; color: #202124; grid-column: span 2; font-weight: 700; }
+    .btn-main { background: #1a73e8; color: white; }
+    .btn-bypass { background: #34a853; color: white; }
+    .btn-sos { background: #ea4335; color: white; margin-top: 10px; font-weight: 700; box-shadow: 0 2px 8px rgba(234,67,53,0.3); }
+
+    .toggle-group { margin-top: 10px; border-top: 1px solid #e8eaed; padding-top: 10px; }
+    .toggle-item { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #3c4043; font-weight: 500; }
     
-    .ai-chat-actions { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 6px; }
-    .btn-mic { background: #ec4899; color: white; border: none; padding: 9px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 2px 10px rgba(236,72,153,0.4); }
-    .btn-mic.listening { background: #ef4444; animation: pulse 1.2s infinite; }
-    .btn-chat-action { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.15); padding: 9px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; }
-
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-    .input-group { margin-bottom: 8px; }
-    .input-group label { display: block; font-size: 10px; color: #94a3b8; margin-bottom: 2px; font-weight: 700; text-transform: uppercase; }
-    .input-group input, .input-group select { width: 100%; padding: 9px 10px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; font-size: 12px; color: #fff; outline: none; }
-
-    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
-    .btn { display: block; width: 100%; padding: 11px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-align: center; font-size: 12px; }
-    .btn-gps { background: #f59e0b; color: #0b0f19; grid-column: span 2; font-weight: 800; }
-    .btn-main { background: #0284c7; color: white; }
-    .btn-bypass { background: #10b981; color: white; }
-    .btn-sos { background: #ef4444; color: white; margin-top: 8px; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); font-weight: 900; }
-
-    .toggle-group { margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px; }
-    .toggle-item { display: flex; align-items: center; justify-content: space-between; margin: 4px 0; font-size: 12px; color: #cbd5e1; }
-    
-    .info-card { margin-top: 8px; padding: 10px; background: #1e293b; border-radius: 8px; font-size: 12px; border-left: 4px solid #ec4899; line-height: 1.4; }
+    .info-card { margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 8px; font-size: 13px; border-left: 4px solid #1a73e8; color: #3c4043; line-height: 1.4; }
 
     /* SOS Modal */
-    .sos-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(185, 28, 28, 0.96); z-index: 9999; color: white; text-align: center; padding: 40px 20px; }
-    .sos-overlay h1 { font-size: 26px; font-weight: 900; }
-    .countdown-circle { font-size: 56px; font-weight: 900; margin: 20px auto; width: 110px; height: 110px; line-height: 100px; border: 4px solid white; border-radius: 50%; }
-    .btn-cancel-sos { background: white; color: #dc2626; padding: 12px 24px; font-size: 15px; border-radius: 30px; border: none; font-weight: 800; cursor: pointer; }
+    .sos-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(234, 67, 53, 0.95); z-index: 9999; color: white; text-align: center; padding: 40px 20px; }
+    .sos-overlay h1 { font-size: 28px; font-weight: 800; }
+    .countdown-circle { font-size: 60px; font-weight: 900; margin: 24px auto; width: 120px; height: 120px; line-height: 110px; border: 4px solid white; border-radius: 50%; }
+    .btn-cancel-sos { background: white; color: #ea4335; padding: 14px 28px; font-size: 16px; border-radius: 30px; border: none; font-weight: 700; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -120,60 +95,27 @@
   <!-- Top HUD Bar -->
   <div class="top-hud">
     <div class="hud-left">
-      <button class="hud-btn" onclick="toggle3DMode()">🕹️ 3D Map</button>
-      <button class="hud-btn active" id="voiceToggleBtn" onclick="toggleVoice()">🔊 Voice On</button>
+      <button class="hud-btn" onclick="togglePanel()">⚙️ Menu / Route</button>
     </div>
     <div class="hud-right">
-      <button class="hud-btn ai-friend" onclick="aiGreetCompanion()">💖 AI Sathi</button>
-      <button class="hud-btn" onclick="togglePanel()">⚙️ Menu</button>
+      <button class="hud-btn" onclick="recenterMap()">🎯 My Location</button>
     </div>
   </div>
 
   <div class="sos-overlay" id="sosModal">
     <h1>🚨 ACCIDENT DETECTED!</h1>
-    <p>Crash detect ho gaya hai. Emergency ambulance ko call ho rahi hai.</p>
+    <p>Crash detect ho gaya hai. Emergency 108 ambulance ko call lag rahi hai.</p>
     <div class="countdown-circle" id="countdownSec">10</div>
     <button class="btn-cancel-sos" onclick="cancelAccidentAlert()">MAIN SURAKSHIT HOON (CANCEL)</button>
   </div>
 
+  <!-- Google Maps Style Control Panel -->
   <div class="control-panel" id="controlPanel">
     <div class="app-brand">
-      <h2>🛡️ LIFE COVER <span>Ultimate AI & Nav</span></h2>
-    </div>
-
-    <!-- AI Companion Box -->
-    <div class="ai-copilot-box">
-      <div class="ai-header">
-        <span>💖 Maya - Real AI Companion</span>
-        <span id="aiStatus">Online & Ready</span>
-      </div>
-      <div class="ai-text" id="aiMessage">"Namaste! Main hoon Maya. Ab meri awaaz ekdum saaf aur aaram se sunayi degi. Aap akele drive kar rahe hain toh chinta bilkul mat kariye!"</div>
-      <div class="ai-chat-actions">
-        <button class="btn-mic" id="micBtn" onclick="startVoiceChat()">🎙️ Bol kar baat karein</button>
-        <button class="btn-chat-action" onclick="aiTellJoke()">😂 Joke</button>
-        <button class="btn-chat-action" onclick="aiMotivation()">✨ Motivation</button>
-      </div>
+      <h2>🗺️ Life Cover - Navigation & Safety</h2>
     </div>
     
-    <div class="grid-2">
-      <div class="input-group" style="margin-bottom:0;">
-        <label>Voice Language:</label>
-        <select id="langSelect" onchange="updateLanguage()">
-          <option value="hi-IN">🇮🇳 Hindi (हिंदी)</option>
-          <option value="en-US">🇬🇧 English</option>
-          <option value="pa-IN">🇮🇳 Punjabi (ਪੰਜਾਬੀ)</option>
-        </select>
-      </div>
-      <div class="input-group" style="margin-bottom:0;">
-        <label>AI Voice Speed:</label>
-        <select id="voiceSpeed" onchange="updateSpeed()">
-          <option value="slow">Aaram se (Dheema)</option>
-          <option value="normal" selected>Normal (Clear)</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="input-group" style="margin-top:8px;">
+    <div class="input-group">
       <label>Start Location:</label>
       <input type="text" id="startLocation" value="My Live Location">
     </div>
@@ -187,7 +129,7 @@
     
     <div class="btn-grid">
       <button class="btn btn-main" onclick="calculateRoute(false)">🚀 Smart Route</button>
-      <button class="btn btn-bypass" onclick="calculateRoute(true)">🛡️ Toll Free Route</button>
+      <button class="btn btn-bypass" onclick="calculateRoute(true)">🛡️ Toll Free Bypass</button>
     </div>
 
     <div class="toggle-group">
@@ -200,21 +142,25 @@
     <button class="btn btn-sos" onclick="triggerAccidentAlert()">🚨 MANUAL SOS (108 AMBULANCE)</button>
 
     <div class="info-card" id="routeInfo">
-      GPS tracking aur Maya AI dono active hain. Clear voice ke sath safe drive karein!
+      Google Maps navigation aur safety guard active hain. Sahi route chunne ke liye upar button dabayein.
     </div>
   </div>
 
   <div id="map-wrapper">
-    <div id="map" class="mode-3d"></div>
+    <div id="map"></div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   
   <script>
+    // Initialized Leaflet Map with Google Maps Standard Tile Layer
     const map = L.map('map', { zoomControl: false }).setView([28.6139, 77.2090], 15);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '© OpenStreetMap'
+    // Google Maps Styled Tile Layer (Standard Roadmap)
+    L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: '© Google Maps'
     }).addTo(map);
 
     let userCoords = null;
@@ -222,158 +168,35 @@
     let watchId = null;
     let crashTimer = null;
     let currentRouteLayer = null;
-    let voiceEnabled = true;
-    let selectedLang = 'hi-IN';
-    let speechRate = 0.88; // Dheemi aur clear awaaz ke liye
-
-    function toggle3DMode() {
-      document.getElementById('map').classList.toggle('mode-3d');
-    }
 
     function togglePanel() {
       document.getElementById('controlPanel').classList.toggle('hidden');
     }
 
-    function toggleVoice() {
-      voiceEnabled = !voiceEnabled;
-      const btn = document.getElementById('voiceToggleBtn');
-      btn.innerHTML = voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off";
-      btn.classList.toggle('active', voiceEnabled);
-      if(voiceEnabled) speakAI("Awaaz chaalu kar di gayi hai.");
-    }
-
-    function updateLanguage() {
-      selectedLang = document.getElementById('langSelect').value;
-      if(selectedLang === 'hi-IN') speakAI("Hindi aawaz chalu ho gayi hai.");
-      else if(selectedLang === 'pa-IN') speakAI("Punjabi voice active ho gayi hai ji.");
-      else speakAI("English voice activated.");
-    }
-
-    function updateSpeed() {
-      const spd = document.getElementById('voiceSpeed').value;
-      speechRate = (spd === 'slow') ? 0.75 : 0.88;
-      speakAI("Awaaz ki speed adjust ho gayi hai.");
-    }
-
-    // Improved & Clear Natural Female Voice Engine
-    function speakAI(text) {
-      if (!voiceEnabled || !('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel(); // Clear backlog
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = selectedLang;
-      utterance.rate = speechRate; // Slighter slow rate for maximum clarity
-      utterance.pitch = 1.25; // Warm & sweet female pitch
-
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        // Find best natural female voice
-        const targetVoice = voices.find(v => 
-          v.lang.includes(selectedLang) && 
-          (v.name.includes('Google') || v.name.includes('Natural') || v.name.toLowerCase().includes('female') || v.name.includes('Hindi'))
-        ) || voices.find(v => v.lang.includes(selectedLang));
-        
-        if (targetVoice) utterance.voice = targetVoice;
-      }
-
-      window.speechSynthesis.speak(utterance);
-    }
-
-    function setAiMessage(msg) {
-      document.getElementById('aiMessage').innerText = `"${msg}"`;
-      speakAI(msg);
-    }
-
-    function aiGreetCompanion() {
-      const greetings = [
-        "Aapka safar kaisa chal raha hai? Koi sawaal ho toh mujhse poocho!",
-        "Main aapke saath hoon, raste ki chinta bilkul mat karo.",
-        "Safar me bore hone ki zaroorat nahi, bol kar baat kar sakte hain."
-      ];
-      setAiMessage(greetings[Math.floor(Math.random() * greetings.length)]);
-    }
-
-    function aiTellJoke() {
-      const jokes = [
-        "Pati ne kaha: Tum gusse me aur bhi pyaari lagti ho! Patni boli: Achha, toh fir ek aur belan maaru?",
-        "Teacher ne poocha: Sabse purana jaanwar kaun sa hai? Student bola: Zebra, kyunki wo black and white hai!",
-        "Raste me board laga tha: Aage khatra hai, dheere chalein. Driver ne gaadi aur tez chala li taaki khatra jaldi nikal jaye!"
-      ];
-      setAiMessage(jokes[Math.floor(Math.random() * jokes.length)]);
-    }
-
-    function aiMotivation() {
-      const thoughts = [
-        "Har safar ek naya anubhav deta hai. Aaram se drive karein aur yatra ka anand lein.",
-        "Aapki suraksha sabse pehle hai. Maskurate rahiye aur dhyan se chalein."
-      ];
-      setAiMessage(thoughts[Math.floor(Math.random() * thoughts.length)]);
-    }
-
-    function processUnlimitedAI(query) {
-      const q = query.toLowerCase();
-      if(q.includes('kaise ho') || q.includes('kya haal')) {
-        setAiMessage("Main bilkul theek hoon! Aap bataiye, aapka safar kaisa chal raha hai?");
-      } else if(q.includes('naam') || q.includes('kaun ho')) {
-        setAiMessage("Mera naam Maya hai. Main aapki AI assistant aur companion hoon.");
-      } else if(q.includes('joke') || q.includes('chutkula')) {
-        aiTellJoke();
-      } else if(q.includes('bore') || q.includes('akela')) {
-        setAiMessage("Mera hote hue akelepan ki koi baat nahi. Koi achhi si baat karte hain!");
+    function recenterMap() {
+      if(userCoords) {
+        map.setView(userCoords, 17, { animate: true });
       } else {
-        setAiMessage(`Aapne kaha: "${query}". Sun kar achha laga! Maine aapki baat samajh li hai.`);
+        alert("Pehle Live GPS Tracking connect karein.");
       }
-    }
-
-    function startVoiceChat() {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert("Aapka browser voice recognition support nahi karta.");
-        return;
-      }
-
-      const recognition = new SpeechRecognition();
-      recognition.lang = selectedLang;
-      recognition.interimResults = false;
-
-      const micBtn = document.getElementById('micBtn');
-      micBtn.classList.add('listening');
-      micBtn.innerHTML = "🎙️ Sun rahi hoon...";
-      setAiMessage("Main sun rahi hoon, boliye...");
-
-      recognition.onresult = function(event) {
-        const speechText = event.results[0][0].transcript;
-        micBtn.classList.remove('listening');
-        micBtn.innerHTML = "🎙️ Bol kar baat karein";
-        processUnlimitedAI(speechText);
-      };
-
-      recognition.onerror = function() {
-        micBtn.classList.remove('listening');
-        micBtn.innerHTML = "🎙️ Bol kar baat karein";
-        setAiMessage("Awaaz saaf nahi aayi, kripya dobara boliye.");
-      };
-
-      recognition.start();
     }
 
     function startLiveTracking() {
-      setAiMessage("Live GPS tracking connect ho rahi hai...");
       if (navigator.geolocation) {
         if(watchId) navigator.geolocation.clearWatch(watchId);
         watchId = navigator.geolocation.watchPosition(
           pos => {
             userCoords = [pos.coords.latitude, pos.coords.longitude];
             if(!userMarker) {
-              userMarker = L.marker(userCoords).addTo(map).bindPopup("🚗 Maya & You");
+              userMarker = L.marker(userCoords).addTo(map).bindPopup("Aapki Live Location");
             } else {
               userMarker.setLatLng(userCoords);
             }
-            map.panTo(userCoords, { animate: true, duration: 0.8 });
+            map.setView(userCoords, 16);
             document.getElementById('startLocation').value = "My Live Location";
           },
-          err => { alert("GPS permission allow karein."); },
-          { enableHighAccuracy: true, maximumAge: 0, timeout: 4000 }
+          err => { alert("Kripya GPS Location ki permission allow karein."); },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
         );
       }
     }
@@ -390,55 +213,47 @@
       throw new Error("Location nahi mili.");
     }
 
-    // Fixed Route Calculation (With Alternatives for Toll Free Bypass)
+    // Route Calculation with Toll-Free / Alternative Routing support
     async function calculateRoute(avoidTolls) {
       const infoBox = document.getElementById('routeInfo');
       try {
-        setAiMessage(avoidTolls ? "Toll-free rasta khoja ja raha hai..." : "Fastest rasta calculate ho raha hai...");
+        infoBox.innerHTML = avoidTolls ? "🛡️ Toll-free rasta khoja ja raha hai..." : "🚀 Fastest rasta calculate ho raha hai...";
         
         const start = await fetchCoords(document.getElementById('startLocation').value);
         const end = await fetchCoords(document.getElementById('endLocation').value);
 
-        // Fetch multiple route options
         let url = `https://router.project-osrm.org/route/v1/driving/${start.lon},${start.lat};${end.lon},${end.lat}?overview=full&geometries=geojson&alternatives=true`;
 
         const res = await fetch(url);
         const data = await res.json();
 
         if(data.routes && data.routes.length > 0) {
-          // If avoidTolls is clicked, pick secondary/alternative route if available
+          // If avoidTolls is selected, choose alternative route index if available
           let routeIdx = (avoidTolls && data.routes.length > 1) ? 1 : 0;
           const route = data.routes[routeIdx];
           const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
 
           if(currentRouteLayer) map.removeLayer(currentRouteLayer);
 
-          const routeColor = avoidTolls ? '#10b981' : '#0284c7'; // Green for Toll Free, Blue/Pink for Main
+          const routeColor = avoidTolls ? '#34a853' : '#1a73e8'; // Google Green for Toll Free, Google Blue for Main
           currentRouteLayer = L.polyline(coords, { 
-            color: routeColor, weight: 7, opacity: 0.9 
+            color: routeColor, weight: 6, opacity: 0.85 
           }).addTo(map);
 
-          map.fitBounds(currentRouteLayer.getBounds(), { padding: [40, 40] });
+          map.fitBounds(currentRouteLayer.getBounds(), { padding: [50, 50] });
 
           const distKm = (route.distance/1000).toFixed(1);
           const timeMin = Math.round(route.duration/60);
 
-          const routeTitle = avoidTolls ? '🛡️ Toll Free Bypass Route' : '🚀 Smart Fastest Route';
+          const routeTitle = avoidTolls ? '🛡️ Toll Free Bypass Route' : '🚀 Fastest Route';
           infoBox.innerHTML = `<b>${routeTitle}</b><br>Duri: ${distKm} km | Samay: ${timeMin} min`;
           
-          if(avoidTolls) {
-            setAiMessage(`Toll-free rasta mil gaya hai! Yeh ${distKm} kilometer ka rasta hai.`);
-          } else {
-            setAiMessage(`Fastest rasta taiyar hai! ${distKm} kilometer ki duri hai.`);
-          }
-
           if(window.innerWidth < 768) {
-            setTimeout(() => togglePanel(), 1500);
+            setTimeout(() => togglePanel(), 1200);
           }
         }
       } catch(err) {
-        infoBox.innerHTML = "❌ Route Error. Sahi location naam daalein.";
-        setAiMessage("Location dhoondne me dikkat aayi, kripya sahi naam daalein.");
+        infoBox.innerHTML = "❌ Route nahi mil paya. Sahi jagah ka naam daalein.";
       }
     }
 
@@ -457,7 +272,6 @@
 
     function triggerAccidentAlert() {
       document.getElementById('sosModal').style.display = 'block';
-      speakAI("Khatra! Accident detect hua hai. Ambulance ko call ki ja rahi hai.");
       let c = 10;
       document.getElementById('countdownSec').innerText = c;
       clearInterval(crashTimer);
@@ -474,10 +288,7 @@
     function cancelAccidentAlert() {
       clearInterval(crashTimer);
       document.getElementById('sosModal').style.display = 'none';
-      speakAI("Emergency alert cancel kar diya gaya hai.");
     }
-
-    window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
   </script>
 </body>
 </html>
